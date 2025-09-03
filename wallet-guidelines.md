@@ -96,7 +96,7 @@ Multiple network accounts can be created for one key pair. Implement this functi
     
     - Decrypt `request_source` field from BridgeMessage using session private key
     - Parse BridgeRequestSource JSON containing origin, IP, User-Agent, timestamp, client_id
-    - Obtain current IP address using bridge's `POST /myip` (can be cached) endpoint for comparison
+    - Obtain current IP address from `connect_source` field in BridgeMessage
     - Compare metadata against current user information
     - Display warnings for any mismatches
 

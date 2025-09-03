@@ -139,7 +139,8 @@ Wallet decrypts the message and is now assured that it came from the app with ID
 
 **Request Source Verification:**
 1. **Decrypt metadata**: Wallet decrypts the `request_source` field from BridgeMessage using its private key
-2. **Parse metadata**: Extract BridgeRequestSource with origin, IP, User-Agent, timestamp, client ID  
+2. **Parse metadata**: Extract BridgeRequestSource with origin, IP, User-Agent, timestamp, client ID
+3. **Verify IP address**: Verify that the `connect_source` field matches the IP address of the client that sent the message
 3. **Compare with stored connection**: Verify metadata matches stored connection details
 4. **Display warnings for mismatches**:
    - Different origin → potential fraud warning

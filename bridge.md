@@ -42,7 +42,7 @@ Sending message from client A to client B. Bridge returns error if ttl is too hi
 
 ```tsx
 request
-    POST /message?client_id=<to_hex_str(A)>?to=<to_hex_str(B)>&ttl=300&topic=<sendTransaction|signData>[&no_request_source=true]
+    POST /message?client_id=<to_hex_str(A)>?to=<to_hex_str(B)>&ttl=300[&topic=<sendTransaction|signData|disconnect>][&no_request_source=true]
 
     body: <base64_encoded_message>
 ```
@@ -67,11 +67,21 @@ When the bridge receives a message from client A to client B, it collects reques
 ```go
 type BridgeRequestSource struct {
     Origin    string `json:"origin"`     // protocol + domain (e.g., "https://app.ton.org")
-    IP        string `json:"ip"`         // client IP address
+    IP        string `json:"ip"`         // sender IP address
     Time      string `json:"time"`       // unixtime
     UserAgent string `json:"user_agent"` // HTTP User-Agent header
 }
 ```
+
+### Connect Source Metadata
+
+```go
+type BridgeConnectSource struct {
+    IP string `json:"ip"` // receiver IP address
+}
+```
+
+When bridge sends a message to the client, it adds the `connect_source` field to the message. This field contains the BridgeConnectSource struct with the IP address of the client that receives the message. The client should be able to verify this IP address against the IP address of the client that sent the message. We're adding this field to the message to minimize cases of IP mismatch due to different proxies used by the client and the bridge.
 
 ### Message Processing with Verification
 
@@ -90,13 +100,26 @@ When the bridge receives a message `base64_encoded_message` from client `A` addr
 {
   "from": <to_hex_str(A)>,
   "message": <base64_encoded_message>,
-  "request_source": <base64_encoded_encrypted_request_source>
+  "request_source": <base64_encoded_encrypted_request_source>, // Information about the sender
+  "connect_source": <bridge_connect_source> // Information about the receiver
 }
 ```
 
-and sends it to the client B via SSE connection:
-```js
-resB.write(BridgeMessage)
+Pseudocode for the bridge:
+```go
+resB.send(struct{
+  From: req.from,
+  Message: req.message,
+  RequestSource: base64_encode(encrypt(struct{
+    Origin: req.origin,
+    IP: req.ip,
+    Time: req.time,
+    UserAgent: req.user_agent,
+  })),
+  ConnectSource: struct{
+    IP: resB.ip,
+  },
+})
 ```
 
 ### Connect Verification Endpoint
